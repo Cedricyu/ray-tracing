@@ -7,6 +7,7 @@
 #include "sphere.h"
 #include "moving_sphere.h"
 
+#include <memory>
 #include <iostream>
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -30,8 +31,8 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 hittable_list random_scene() {
     hittable_list world;
 
-    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+    auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
 
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
@@ -81,8 +82,9 @@ int main() {
 
     auto aspect_ratio = 16.0 / 9.0;
     int image_width = 400;
-    int samples_per_pixel = 1000;
-    const int max_depth = 50;
+
+    int samples_per_pixel = 10;
+    const int max_depth = 5;
     // World
 
     // hittable_list world;
