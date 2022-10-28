@@ -33,7 +33,7 @@ hittable_list random_scene() {
 
     auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
-
+    world.add(make_shared<sphere>(point3(-1000,0,0), 1000, make_shared<lambertian>(checker)));
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             auto choose_mat = random_double();
