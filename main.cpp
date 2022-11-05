@@ -16,17 +16,17 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     if (depth <= 0)
         return color(0,0,0);
 
-    if (world.hit(r, 0.001, infinity, rec)) {
-        ray scattered;
-        color attenuation;
-        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-            return attenuation * ray_color(scattered, world, depth-1);
-        return color(0,0,0);
-    }
+     if (!world.hit(r, 0.001, infinity, rec))
+        return background;
 
-    vec3 unit_direction = unit_vector(r.direction());
-    auto t = 0.5*(unit_direction.y() + 1.0);
-    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+    ray scattered;
+    color attenuation;
+    color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+
+    if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+        return emitted;
+
+    return emitted + attenuation * ray_color(scattered, background, world, depth-1);
 }
 hittable_list random_scene() {
     hittable_list world;
@@ -34,6 +34,7 @@ hittable_list random_scene() {
     auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
     world.add(make_shared<sphere>(point3(-1000,0,0), 1000, make_shared<lambertian>(checker)));
+    world.add(make_shared<sphere>(point3(0,1000,0), 990, make_shared<lambertian>(checker)));
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             auto choose_mat = random_double();
