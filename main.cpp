@@ -6,9 +6,11 @@
 #include "hittable_list.h"
 #include "sphere.h"
 #include "moving_sphere.h"
-
+#include "aarect.h"
 #include <memory>
 #include <iostream>
+#include "math.h"
+
 color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
     hit_record rec;
 
@@ -27,19 +29,21 @@ color ray_color(const ray& r, const color& background, const hittable& world, in
     if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
         return emitted;
 
-    return emitted + attenuation * ray_color(scattered, background, world, depth-1);
+    return (emitted + attenuation * ray_color(scattered, background, world, depth-1))*abs(dot(unit_vector(scattered.direction()),unit_vector( rec.normal)));
 }
 hittable_list random_scene() {
     hittable_list world;
 
     auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
-    auto solid = make_shared<solid_color>(color(0.2, 0.3, 0.1));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(solid)));
-    world.add(make_shared<sphere>(point3(-1000,0,0), 995, make_shared<lambertian>(solid)));
-    world.add(make_shared<sphere>(point3(1000,0,0), 995, make_shared<lambertian>(solid)));
-    world.add(make_shared<sphere>(point3(0,0,1000), 995, make_shared<lambertian>(solid)));
-    world.add(make_shared<sphere>(point3(0,0,-1000), 995, make_shared<lambertian>(solid)));
-    world.add(make_shared<sphere>(point3(0,1000,0), 995, make_shared<lambertian>(solid)));
+    auto white = make_shared<solid_color>(color(1, 1, 1));
+    auto green = make_shared<solid_color>(color(0, 1, 0));
+    auto red = make_shared<solid_color>(color(1, 0, 0));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(white)));
+    world.add(make_shared<sphere>(point3(-1000,0,0), 1000, make_shared<lambertian>(green)));
+    world.add(make_shared<sphere>(point3(1000,0,0), 995, make_shared<lambertian>(red)));
+    world.add(make_shared<sphere>(point3(0,0,1000), 990, make_shared<lambertian>(white)));
+    world.add(make_shared<sphere>(point3(0,0,-1000), 1000, make_shared<lambertian>(white)));
+    world.add(make_shared<sphere>(point3(0,1000,0), 995, make_shared<lambertian>(white)));
     // for (int a = -11; a < 11; a++) {
     //     for (int b = -11; b < 11; b++) {
     //         auto choose_mat = random_double();
@@ -70,17 +74,41 @@ hittable_list random_scene() {
     //     }
     // }
 
-    auto material1 = make_shared<diffuse_light>(color(4, 4, 4));
-    world.add(make_shared<sphere>(point3(0, 0, 0), 0.5, material1));
+    // auto material1 = make_shared<diffuse_light>(color(4, 4, 4));
+    // world.add(make_shared<sphere>(point3(0, 0, 0), 0.5, material1));
 
-    auto material2 = make_shared<diffuse_light>(color(0.7, 0.6, 0.5));
-    world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
+    auto material2 = make_shared<diffuse_light>(color(7, 6, 5));
+    world.add(make_shared<sphere>(point3(2.5, 2.5, 1), 1.0, material2));
 
-    auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
-    world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
+    // auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+    // world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
     return world;
 }
+
+hittable_list cornell_box() {
+    hittable_list objects;
+
+    auto red   = make_shared<lambertian>(color(.65, .05, .05));
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    auto green = make_shared<lambertian>(color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(color(15, 15, 15));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+
+    auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+    objects.add(make_shared<sphere>(point3(50,50, 50), 50.0, material3));
+
+
+    return objects;
+}
+
 
 int main() {
 
@@ -91,31 +119,53 @@ int main() {
 
     int samples_per_pixel = 10;
     const int max_depth = 50;
-    color background(0,0,0);
-    // World
 
-    // hittable_list world;
-    //auto R = cos(pi/4);
-    // hittable_list world;
-    /*
-    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-    auto material_left   = make_shared<dielectric>(1.5);
-    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
-    */
-    auto world = random_scene();
+    hittable_list world;
+
+    point3 lookfrom;
+    point3 lookat;
+    auto vfov = 40.0;
+    auto aperture = 0.0;
+    color background(0,0,0);
+
+    switch (1)
+    {
+        case 1:
+        {
+            //Camera
+            
+            lookfrom = point3(2.5, 2.5, 9.9);
+            lookat = point3(2.5, 2.5, 0);
+            aperture = 0.1;
+            image_width = 600;
+            samples_per_pixel = 100;
+            //int image_height = static_cast<int>(image_width / aspect_ratio);
+            world = random_scene();
+            break;
+        }
+        case 2:
+        {
+            // auto aperture = 0.1;
+            //int image_height = static_cast<int>(image_width / aspect_ratio);
+
+            world = cornell_box();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
+            lookfrom = point3(278, 278, -800);
+            lookat = point3(278, 278, 0);
+            vfov = 40.0;
+            break;
+        }
+    }
     
-    //Camera
-    
-    point3 lookfrom(4,3,3);
-    point3 lookat(0,0,0);
+
     vec3 vup(0,1,0);
-    auto dist_to_focus = 3.0;
-    auto aperture = 0.1;
+    auto dist_to_focus = 10.0;
     int image_height = static_cast<int>(image_width / aspect_ratio);
 
 
-    camera cam(lookfrom, lookat, vup, 50, aspect_ratio, aperture, dist_to_focus, 0.0, 5.0);
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 5.0);
 
     //camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
     // Camera
