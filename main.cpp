@@ -112,7 +112,7 @@ hittable_list cornell_box() {
 
     auto earth_texture = make_shared<image_texture>("ntnu_logo.jpg");
     auto earth_surface = make_shared<lambertian>(earth_texture);
-    objects.add(make_shared<sphere>(point3(0,0,0), 2, earth_surface));
+    objects.add(make_shared<sphere>(point3(150,150,300), 20, earth_surface));
 
 
     return objects;
@@ -158,7 +158,7 @@ int main() {
     auto aperture = 0.0;
     color background(0,0,0);
 
-    switch (3)
+    switch (2)
     {
         case 1:
         {
@@ -181,7 +181,7 @@ int main() {
             world = cornell_box();
             aspect_ratio = 1.0;
             image_width = 400;
-            samples_per_pixel = 200;
+            samples_per_pixel = 10;
             lookfrom = point3(278, 278, -800);
             lookat = point3(278, 278, 0);
             vfov = 40.0;
