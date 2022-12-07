@@ -45,7 +45,7 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
 }
 
 
-bvh_node(
+bvh_node::bvh_node(
     std::vector<shared_ptr<hittable>>& src_objects,
     size_t start, size_t end, double time0, double time1
 ) {

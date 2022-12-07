@@ -10,6 +10,8 @@
 #include <memory>
 #include <iostream>
 #include "math.h"
+#include "box.h"
+//#include "bvh.h"
 
 color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
     hit_record rec;
@@ -103,12 +105,40 @@ hittable_list cornell_box() {
 
 
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
-    objects.add(make_shared<sphere>(point3(50,50, 50), 50.0, material3));
+    //objects.add(make_shared<sphere>(point3(50,50, 50), 50.0, material3));
+    objects.add(make_shared<box>(point3(130, 0, 65), point3(295, 165, 230), white));
+    objects.add(make_shared<box>(point3(265, 0, 295), point3(430, 330, 460), white));
+
+
+    auto earth_texture = make_shared<image_texture>("ntnu_logo.jpg");
+    auto earth_surface = make_shared<lambertian>(earth_texture);
+    objects.add(make_shared<sphere>(point3(0,0,0), 2, earth_surface));
 
 
     return objects;
 }
 
+
+hittable_list earth() {
+    hittable_list objects;
+    auto earth_texture = make_shared<image_texture>("ntnu_logo.jpg");
+    auto earth_surface = make_shared<lambertian>(earth_texture);
+    objects.add(make_shared<sphere>(point3(2,2,2), 2, earth_surface));
+    auto material2 = make_shared<diffuse_light>(color(7, 6, 5));
+    objects.add(make_shared<sphere>(point3(3.5, 3.5, 1), 1.0, material2));
+    auto red   = make_shared<lambertian>(color(.65, .05, .05));
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    auto green = make_shared<lambertian>(color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(color(15, 15, 15));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+    return objects;
+}
 
 int main() {
 
@@ -128,7 +158,7 @@ int main() {
     auto aperture = 0.0;
     color background(0,0,0);
 
-    switch (1)
+    switch (3)
     {
         case 1:
         {
@@ -150,11 +180,23 @@ int main() {
 
             world = cornell_box();
             aspect_ratio = 1.0;
-            image_width = 600;
+            image_width = 400;
             samples_per_pixel = 200;
             lookfrom = point3(278, 278, -800);
             lookat = point3(278, 278, 0);
             vfov = 40.0;
+            break;
+        }
+
+        case 3:
+        {
+            world = earth();
+            aspect_ratio = 1.0;
+            image_width = 300;
+            samples_per_pixel = 200;
+            lookfrom = point3(13,2,3);
+            lookat = point3(1,0,1);
+            vfov = 20.0;
             break;
         }
     }
